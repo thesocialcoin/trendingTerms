@@ -1,4 +1,2 @@
 # trendingTerms
-# trendingTerms
 
-first commit
