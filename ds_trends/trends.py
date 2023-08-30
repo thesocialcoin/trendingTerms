@@ -35,7 +35,8 @@ class TopTrends:
                 if self.is_trend(freqs_present[word], freqs_past[word], rate):
                     trends[word] = (freqs_present[word] - freqs_past[word])/freqs_past[word]
             else:
-                trends[word] = 9999
+                if freqs_present[word] > 0.05:
+                    trends[word] = 9999
         return trends
     
 
