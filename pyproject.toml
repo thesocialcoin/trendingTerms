@@ -6,14 +6,13 @@ authors = ["Alejandro Bonell <abonell@citibeats.com>"]
 readme = "README.md"
 packages = [{include = "ds_trends"}]
 
-
-
 [tool.poetry.dependencies]
 python = "^3.8"
 pandas = "^1.2.3"
 numpy = "^1.25.2"
 scikit-learn = "^1.3.0"
 nltk = "^3.8.1"
+scipy = "1.10.0"
 
 [build-system]
 requires = ["poetry-core"]
