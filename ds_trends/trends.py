@@ -1,11 +1,19 @@
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 from typing import List
+import re
+
+import os
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(dir_path, 'stop_words.txt'), 'r') as f:
+    STOPWORDS = f.read().splitlines()
+
 
 
 class TopTrends:
     
-    def __init__(self, stop_words=None, bigrams: bool=True, min_freq: float=0.01):
+    def __init__(self, stop_words=STOPWORDS, bigrams: bool=True, min_freq: float=0.01):
 
         self.ngram_range = (1,2) if bigrams else (1,1)
         self.min_df = min_freq
@@ -37,9 +45,15 @@ class TopTrends:
                 if self.is_trend(freqs_present[word], freqs_past[word], rate):
                     trends[word] = (freqs_present[word] - freqs_past[word])/freqs_past[word]
             else:
-                if freqs_present[word] > 0.05:
+                if freqs_present[word] > 0.2:
                     trends[word] = 9999
         return trends
     
 
 
+def remove_stopwords(text, stopwords):
+    # Generate a regex pattern to match any stop word surrounded by word boundaries
+    pattern = r'\b(' + '|'.join(re.escape(word) for word in stopwords) + r')\b'
+    
+    # Use the re.sub function to replace all stop words with an empty string
+    return re.sub(pattern, '', text)
