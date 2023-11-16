@@ -63,11 +63,24 @@ class top_terms_extractor:
             """Fit a Count Vectorizer to a text"""
             X = self.vectorizer.fit_transform(texts)
             return X
-            
+        
         def get_words_freqs(self, texts):
             """Get a dictionnary with all the words in a text and their norm freq"""
             X = self.fit_vectorizer(texts)
-            total_freqs = np.array(np.sum(X, axis=0)/len(texts))[0]
+            bigrams = [word for word in self.vectorizer.get_feature_names_out() if ' ' in word]
+            bigram_counts = np.array([self.vectorizer.vocabulary_[bigram] for bigram in bigrams])
+            bigram_freqs_ = dict(zip(bigrams, bigram_counts/len(texts)))
+            most_freq_bigrams = sorted(bigram_freqs_, reverse=True)[:9]
+
+            word_counts_X = np.array(np.sum(X, axis=0))[0]
+
+            for bigram in most_freq_bigrams:
+                tokenized_bigram = bigram.split()
+                for token in tokenized_bigram:
+                    if token in self.vectorizer.get_feature_names_out():
+                        word_counts_X[self.vectorizer.vocabulary_[token]] -= self.vectorizer.vocabulary_[bigram]
+    
+            total_freqs = word_counts_X/len(texts)
             words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
             self.words_freqs_ = words_freqs_
             return words_freqs_
