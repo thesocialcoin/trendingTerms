@@ -70,7 +70,7 @@ class top_terms_extractor:
             bigrams = [word for word in self.vectorizer.get_feature_names_out() if ' ' in word]
             bigram_counts = np.array([self.vectorizer.vocabulary_[bigram] for bigram in bigrams])
             bigram_freqs_ = dict(zip(bigrams, bigram_counts/len(texts)))
-            most_freq_bigrams = sorted(bigram_freqs_, reverse=True)[:9]
+            most_freq_bigrams = sorted(bigram_freqs_, reverse=True)[:10]
 
             word_counts_X = np.array(np.sum(X, axis=0))[0]
 
