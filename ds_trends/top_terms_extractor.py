@@ -40,6 +40,7 @@ def update_unigram_counts(vectorizer, X, texts):
 
     returns: updated word counts array.
     """
+    
     bigrams = [word for word in vectorizer.get_feature_names_out() if ' ' in word]
     bigram_counts = np.array([vectorizer.vocabulary_[bigram] for bigram in bigrams])
     bigram_freqs_ = dict(zip(bigrams, bigram_counts/len(texts)))
@@ -48,10 +49,13 @@ def update_unigram_counts(vectorizer, X, texts):
     word_counts_X = np.array(np.sum(X, axis=0))[0]
 
     for bigram in most_freq_bigrams:
+
         tokenized_bigram = bigram.split()
+        bigram_count = vectorizer.vocabulary_[bigram]
+
         for token in tokenized_bigram:
             if token in vectorizer.get_feature_names_out():
-                word_counts_X[vectorizer.vocabulary_[token]] -= vectorizer.vocabulary_[bigram]
+                word_counts_X[vectorizer.vocabulary_[token]] -= bigram_count
 
     return word_counts_X
 
