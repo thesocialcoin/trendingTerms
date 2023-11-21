@@ -29,14 +29,23 @@ stop.extend(stop_fr)
 
 ######################################################topterms###################################################################
 
-def update_word_counts(vectorizer, X_counts, texts):
+def update_unigram_counts(vectorizer, X, texts):
+    """
+    update unigram counts based on bigram counts.
 
+    parameters:
+    - vectorizer: vectorizer used to transform the texts.
+    - X: sparse matrix representation of the texts.
+    - texts: original text data.
+
+    returns: updated word counts array.
+    """
     bigrams = [word for word in vectorizer.get_feature_names_out() if ' ' in word]
     bigram_counts = np.array([vectorizer.vocabulary_[bigram] for bigram in bigrams])
     bigram_freqs_ = dict(zip(bigrams, bigram_counts/len(texts)))
     most_freq_bigrams = sorted(bigram_freqs_, reverse=True)[:10]
 
-    word_counts_X = np.array(np.sum(X_counts, axis=0))[0]
+    word_counts_X = np.array(np.sum(X, axis=0))[0]
 
     for bigram in most_freq_bigrams:
         tokenized_bigram = bigram.split()
@@ -85,7 +94,7 @@ class top_terms_extractor:
             """Get a dictionnary with all the words in a text and their norm freq"""
             X = self.fit_vectorizer(texts)
 
-            word_counts_X = update_word_counts(self.vectorizer, X, texts)
+            word_counts_X = update_unigram_counts(self.vectorizer, X, texts)
 
             total_freqs = word_counts_X/len(texts)
             words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
