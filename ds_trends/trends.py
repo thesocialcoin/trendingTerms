@@ -20,7 +20,7 @@ class TopTrends:
         """Get a dictionnary with all the words in a text and their norm freq"""
         X = self.vectorizer.fit_transform(texts)
 
-        word_counts_X = top_terms_extractor.update_word_counts(self.vectorizer, X, texts)
+        word_counts_X = top_terms_extractor.update_unigram_counts(self.vectorizer, X, texts)
     
         total_freqs = word_counts_X/len(texts)
         words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
