@@ -1,30 +1,20 @@
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 from typing import List
-from . import top_terms_extractor
+from ds_trends.frequency_calculator import FrequencyCalculator
 
-class TopTrends:
-    
-    def __init__(self, stop_words=None, bigrams: bool=True, min_freq: float=0.01):
+class TopTrends(FrequencyCalculator):
 
-        self.ngram_range = (1,2) if bigrams else (1,1)
+    def __init__(self, stop_words=None, bigrams: bool = True, min_freq: float = 0.01):
+
+        self.ngram_range = (1, 2) if bigrams else (1, 1)
         self.min_df = min_freq
         self.stop_words = stop_words
-        self.vectorizer = CountVectorizer(ngram_range=self.ngram_range, 
-                                              max_df=0.7,
-                                              min_df=self.min_df,
-                                              stop_words= self.stop_words)
-        
-    
-    def get_freqs(self, texts: List[str]):
-        """Get a dictionnary with all the words in a text and their norm freq"""
-        X = self.vectorizer.fit_transform(texts)
+        super().__init__(ngram_range=self.ngram_range,
+                         max_df=0.7,
+                         min_df=min_freq,
+                         stop_words= self.stop_words)
 
-        word_counts_X = top_terms_extractor.update_unigram_counts(self.vectorizer, X, texts)
-    
-        total_freqs = word_counts_X/len(texts)
-        words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
-        return words_freqs_
         
     def is_trend(self, freq_present: float, freq_past: float, rate: float):
         freq_rate = (freq_present-freq_past)/freq_past

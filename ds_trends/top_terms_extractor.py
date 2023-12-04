@@ -6,8 +6,9 @@ from os.path import join
 import ast
 import operator
 
-from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords
+
+from ds_trends.frequency_calculator import FrequencyCalculator
 
 ######################################################stopwords###################################################################
 
@@ -29,37 +30,7 @@ stop.extend(stop_fr)
 
 ######################################################topterms###################################################################
 
-def update_unigram_counts(vectorizer, X, texts):
-    """
-    update unigram counts based on bigram counts.
-
-    parameters:
-    - vectorizer: vectorizer used to transform the texts.
-    - X: sparse matrix representation of the texts.
-    - texts: original text data.
-
-    returns: updated word counts array.
-    """
-    
-    bigrams = [word for word in vectorizer.get_feature_names_out() if ' ' in word]
-    bigram_counts = np.array([vectorizer.vocabulary_[bigram] for bigram in bigrams])
-    bigram_freqs_ = dict(zip(bigrams, bigram_counts/len(texts)))
-    most_freq_bigrams = sorted(bigram_freqs_, reverse=True)[:10]
-
-    word_counts_X = np.array(np.sum(X, axis=0))[0]
-
-    for bigram in most_freq_bigrams:
-
-        tokenized_bigram = bigram.split()
-        bigram_count = vectorizer.vocabulary_[bigram]
-
-        for token in tokenized_bigram:
-            if token in vectorizer.get_feature_names_out():
-                word_counts_X[vectorizer.vocabulary_[token]] -= bigram_count
-
-    return word_counts_X
-
-class top_terms_extractor:
+class top_terms_extractor(FrequencyCalculator):
         """A class to detect top terms and other features from text
 
         Attributes:
@@ -73,37 +44,8 @@ class top_terms_extractor:
         top_lemmas: A dictionnary with top lemmas and norm freqs (use compute_top_terms with spacy lemmatizer)
         categories: A dictionnary with categories and the top words representing the categories (get_words_freqs_by_category)
         """
-        def __init__(self, **kwargs):
-            self.stop = stop 
-            self.stop2 = kwargs.get('stop_words', None)
-            if self.stop2!=None:
-                self.stop.extend(self.stop2)
-            self.vectorizer = CountVectorizer(ngram_range=kwargs.get('ngram_range',(1,2)), 
-                                              max_df=kwargs.get('max_df', 0.5),
-                                              min_df=kwargs.get('min_df', 0.001),
-                                              stop_words= self.stop)#.extend(kwargs.get('stop_words', []))
-            
-            self.words_freqs_ = {}
-            self.top_terms={}
-            self.top_lemmas={}
-            self.categories = {}
-
-
-        def fit_vectorizer(self, texts):
-            """Fit a Count Vectorizer to a text"""
-            X = self.vectorizer.fit_transform(texts)
-            return X
-        
-        def get_words_freqs(self, texts):
-            """Get a dictionnary with all the words in a text and their norm freq"""
-            X = self.fit_vectorizer(texts)
-
-            word_counts_X = update_unigram_counts(self.vectorizer, X, texts)
-
-            total_freqs = word_counts_X/len(texts)
-            words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
-            self.words_freqs_ = words_freqs_
-            return words_freqs_
+        def __init__(self, stop=None, **kwargs):
+            super().__init__(stop, **kwargs)
 
         def compute_top_terms(self, n=100, texts=None, nlp=None):
             """
@@ -118,7 +60,7 @@ class top_terms_extractor:
                 - top lemmas if nlp!= None  
             """
             if texts!=None:
-                self.get_words_freqs(texts)
+                self.get_freqs(texts)
             if texts==None and self.words_freqs_=={}:
                 raise Exception("No dict of words and freqs, you need to pass list of texts.")
             top_terms = dict(sorted(self.words_freqs_.items(), key=lambda item: item[1], reverse=True)[:10*n])
@@ -171,7 +113,7 @@ class top_terms_extractor:
             
             for cat in unique_categories:
                 texts_cat = texts[categories == cat]
-                freq_categories[cat] = dict(sorted(self.get_words_freqs(texts_cat, cat=cat).items(), key=operator.itemgetter(1),reverse=True)[:n])
+                freq_categories[cat] = dict(sorted(self.get_freqs(texts_cat, cat=cat).items(), key=operator.itemgetter(1),reverse=True)[:n])
                 
             probas = {cat: 
                       {word: value.get(word) * len(texts[categories == cat]) \
