@@ -7,7 +7,7 @@ import ast
 import operator
 
 from nltk.corpus import stopwords
-
+from sklearn.feature_extraction.text import CountVectorizer
 from ds_trends.frequency_calculator import FrequencyCalculator
 
 ######################################################stopwords###################################################################
@@ -30,7 +30,7 @@ stop.extend(stop_fr)
 
 ######################################################topterms###################################################################
 
-class TopTermsExtractor(FrequencyCalculator):
+class TopTermsExtractor:
         """A class to detect top terms and other features from text
 
         Attributes:
@@ -44,8 +44,22 @@ class TopTermsExtractor(FrequencyCalculator):
         top_lemmas: A dictionnary with top lemmas and norm freqs (use compute_top_terms with spacy lemmatizer)
         categories: A dictionnary with categories and the top words representing the categories (get_words_freqs_by_category)
         """
-        def __init__(self, stop=None, **kwargs):
-            super().__init__(stop, **kwargs)
+        def __init__(self, **kwargs):
+            self.stop = stop 
+            self.stop2 = kwargs.get('stop_words', None)
+            if self.stop2!=None:
+                self.stop.extend(self.stop2)
+            self.vectorizer = CountVectorizer(ngram_range=kwargs.get('ngram_range',(1,2)), 
+                                              max_df=kwargs.get('max_df', 0.5),
+                                              min_df=kwargs.get('min_df', 0.001),
+                                              stop_words= self.stop)#.extend(kwargs.get('stop_words', []))
+            
+            self.words_freqs_ = {}
+            self.top_terms={}
+            self.top_lemmas={}
+            self.categories = {}
+            
+            self.freq_calculator = FrequencyCalculator(self.vectorizer)
 
         def compute_top_terms(self, n=100, texts=None, nlp=None):
             """
@@ -59,8 +73,11 @@ class TopTermsExtractor(FrequencyCalculator):
                 - top terms
                 - top lemmas if nlp!= None  
             """
+
+            self.words_freqs_ = self.freq_calculator.get_freqs(texts)
+
             if texts!=None:
-                self.get_freqs(texts)
+                self.freq_calculator.get_freqs(texts)
             if texts==None and self.words_freqs_=={}:
                 raise Exception("No dict of words and freqs, you need to pass list of texts.")
             top_terms = dict(sorted(self.words_freqs_.items(), key=lambda item: item[1], reverse=True)[:10*n])
@@ -113,7 +130,7 @@ class TopTermsExtractor(FrequencyCalculator):
             
             for cat in unique_categories:
                 texts_cat = texts[categories == cat]
-                freq_categories[cat] = dict(sorted(self.get_freqs(texts_cat, cat=cat).items(), key=operator.itemgetter(1),reverse=True)[:n])
+                freq_categories[cat] = dict(sorted(self.freq_calculator.get_freqs(texts_cat, cat=cat).items(), key=operator.itemgetter(1),reverse=True)[:n])
                 
             probas = {cat: 
                       {word: value.get(word) * len(texts[categories == cat]) \
