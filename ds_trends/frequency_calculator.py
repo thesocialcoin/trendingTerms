@@ -60,6 +60,4 @@ class FrequencyCalculator():
         X = self.fit_vectorizer(texts)
         word_counts_X = self.update_unigram_counts(texts)
         total_freqs = word_counts_X / len(texts)
-        words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
-        self.words_freqs_ = words_freqs_
-        return words_freqs_
+        return dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
