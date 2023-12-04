@@ -24,8 +24,7 @@ class FrequencyCalculator():
         """
         Fit a Count Vectorizer to a text
         """
-        X = self.vectorizer.fit_transform(texts)
-        return X
+        return self.vectorizer.fit_transform(texts)
     
     def update_unigram_counts(self, texts):
         """
