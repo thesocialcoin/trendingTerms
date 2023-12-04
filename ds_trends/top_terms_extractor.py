@@ -30,7 +30,7 @@ stop.extend(stop_fr)
 
 ######################################################topterms###################################################################
 
-class top_terms_extractor(FrequencyCalculator):
+class TopTermsExtractor(FrequencyCalculator):
         """A class to detect top terms and other features from text
 
         Attributes:
