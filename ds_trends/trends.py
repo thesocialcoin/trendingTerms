@@ -1,10 +1,10 @@
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 from typing import List
-
+from ds_trends.frequency_calculator import FrequencyCalculator
 
 class TopTrends:
-    
+
     def __init__(self, stop_words=None, bigrams: bool=True, min_freq: float=0.01):
 
         self.ngram_range = (1,2) if bigrams else (1,1)
@@ -15,12 +15,8 @@ class TopTrends:
                                               min_df=self.min_df,
                                               stop_words= self.stop_words)
         
-    def get_freqs(self, texts: List[str]):
-        """Get a dictionnary with all the words in a text and their norm freq"""
-        X = self.vectorizer.fit_transform(texts)
-        total_freqs = np.array(np.sum(X, axis=0)/len(texts))[0]
-        words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
-        return words_freqs_
+        self.freq_calculator = FrequencyCalculator(self.vectorizer)
+
         
     def is_trend(self, freq_present: float, freq_past: float, rate: float):
         freq_rate = (freq_present-freq_past)/freq_past
@@ -28,8 +24,8 @@ class TopTrends:
     
     def get_trends(self, texts_present: List[str], texts_past: List[str], rate: float):
         trends = {}
-        freqs_present = self.get_freqs(texts_present)
-        freqs_past = self.get_freqs(texts_past)
+        freqs_present = self.freq_calculator.get_freqs(texts_present)
+        freqs_past = self.freq_calculator.get_freqs(texts_past)
         for word in freqs_present.keys():
             if freqs_present[word] < 0.01:
                 continue
