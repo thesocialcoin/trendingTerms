@@ -40,8 +40,14 @@ class top_terms_extractor:
         def get_words_freqs(self, texts):
             """Get a dictionnary with all the words in a text and their norm freq"""
             X = self.fit_vectorizer(texts)
-            total_freqs = np.array(np.sum(X, axis=0)/len(texts))[0]
-            words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
+
+            total_counts = np.array(np.sum(X, axis=0))[0]
+            total_freqs = total_counts/len(texts)
+            words_freqs_ = [{
+                "term": term,
+                "count": count,
+                "freq": freq
+            } for term, count, freq in zip(self.vectorizer.get_feature_names_out(), total_counts, total_freqs)]
             self.words_freqs_ = words_freqs_
             return words_freqs_
 
@@ -61,16 +67,17 @@ class top_terms_extractor:
                 self.get_words_freqs(texts)
             if texts==None and self.words_freqs_=={}:
                 raise Exception("No dict of words and freqs, you need to pass list of texts.")
-            top_terms = dict(sorted(self.words_freqs_.items(), key=lambda item: item[1], reverse=True)[:10*n])
-            for word in top_terms.keys():
-                for word2 in top_terms.keys():
-                    if (word + ' ' in word2) or (' ' + word in word2):
-                        top_terms[word] = top_terms[word] - top_terms[word2]
-            self.top_terms = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
-            if nlp!=None:
-                top_terms = lemma_dict(top_terms, nlp)
-                self.top_lemmas = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
-            return dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
+            top_terms = sorted(self.words_freqs_, key=lambda item: item["freq"], reverse=True)[:10*n]
+
+            for term in top_terms:
+                for term2 in top_terms:
+                    if (term["term"] + ' ' in term2["term"]) or (' ' + term["term"] in term2["term"]):
+                        term["freq"] = term["freq"] - term2["freq"]
+            self.top_terms = sorted(top_terms, key=lambda item: item["freq"], reverse=True)[:n]
+            # if nlp!=None:
+            #     top_terms = lemma_dict(top_terms, nlp)
+            #     self.top_lemmas = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
+            return sorted(top_terms, key=lambda item: item["freq"], reverse=True)[:n]
 
 
 

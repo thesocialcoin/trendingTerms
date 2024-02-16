@@ -27,9 +27,9 @@ If you have a list of texts or a DataFrame with a column of texts then you can c
 texts = data.loc[:, 'text'].values.tolist()
 top_terms_algo = top_terms_extractor.top_terms_extractor()
 
-terms = top_terms_algo.compute_top_terms(texts=texts, n=10)
-for term, freq in terms.items():
-    print(f'{term}: {freq*100:.2f}%')
+top_terms = top_terms_algo.compute_top_terms(texts=texts, n=10)
+for term in top_terms:
+    print(f'{term["term"]}: {term["freq"]*100:.2f}%')
 ```
 
 ## Usage Trending Terms
