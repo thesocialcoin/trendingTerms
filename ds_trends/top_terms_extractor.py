@@ -1,40 +1,15 @@
 import numpy as np
 from collections import Counter
-from nltk.util import ngrams
 import pandas as pd
-from os.path import join
-import ast
 import operator
 
 from sklearn.feature_extraction.text import CountVectorizer
-from nltk.corpus import stopwords
-
-######################################################stopwords###################################################################
-
-stop = stopwords.words('english')
-stop.extend(stopwords.words('spanish'))
-stop.extend(stopwords.words('french'))
-stop.extend(stopwords.words('portuguese'))
-stop.extend(['19','NUM','us', 'amp','https','co','get', 'dont', 'would', 'one', 'many', 'im', 'even', 'still', 'also', 'could', 'cant', 'much', 'isnt'
- 'thats', 'long', 'may', 'got', 'ive', 'yet', 'youre', 'ill', 'etc', 'lot', 'wont', 'didnt', 'two', 'theyre', 'theres', 'next'])
-stop.extend(['ingrese','ahora', 'van', 'va', 'fa','rt','decir', 'ser', 'solo', 'nunca', 'así', 'hoy', 'ir', 'dejar', 'además', 'según', 'cómo', 'menos', 'travès', 
-    'cada', 'varios', 'pues', 'mientras', 'después', 'luego', 'aquí', 'vía'])
-stop_fr = ['ça', 'plus', 'si', 'quand', 'comme', 'alors', 'jai', 'non', 'donc', 'car', 'cette', 'aussi', 'oui', 'sans', 
-     'là', 'quoi', 'après', 'parce', 'jamais', 'où', 'être', 'pourquoi', 'toujours', 'juste', 'contre', 'avant',
-     'vraiment', 'bon', 'mal', 'déjà', 'peut', 'être', 'surtout', 'très', 'sais', 'toutes', 'deux', 'autre', 'moins', 'aujourd', 'hui'
-     'sinon', 'sauf', 'sous', 'bah', 'maintenant', 'sens', 'vois', 'propos', 'reste', 'vu', 'ici', 'tout', 'tous', 'faut', 'encore', 
-     'jusqu', 'seul', 'devant', 'mec', 'trop', 'cela', 'aucune', 'chez', 'leurs', 'depuis', 'ceux', 'pareil', 'pire', 
-     'doit', 'comme']
-stop.extend(stop_fr)
-
-######################################################topterms###################################################################
 
 class top_terms_extractor:
         """A class to detect top terms and other features from text
 
         Attributes:
-        stop: A list of multilingual stopwords (en, es, fr, pr)
-        stop2: extra words that can be excluded depending on the project
+        stop_words: stop words that can be excluded depending on the project
         ngram_range, max_df, min_df: arguments for CountVectorizer
         vectorizer: An instance from CountVectorizer to count the freqs of words
 
@@ -44,14 +19,12 @@ class top_terms_extractor:
         categories: A dictionnary with categories and the top words representing the categories (get_words_freqs_by_category)
         """
         def __init__(self, **kwargs):
-            self.stop = stop 
-            self.stop2 = kwargs.get('stop_words', None)
-            if self.stop2!=None:
-                self.stop.extend(self.stop2)
-            self.vectorizer = CountVectorizer(ngram_range=kwargs.get('ngram_range',(1,2)), 
-                                              max_df=kwargs.get('max_df', 0.5),
-                                              min_df=kwargs.get('min_df', 0.001),
-                                              stop_words= self.stop)#.extend(kwargs.get('stop_words', []))
+            self.vectorizer = CountVectorizer(
+                ngram_range=kwargs.get('ngram_range',(1,2)), 
+                max_df=kwargs.get('max_df', 0.5),
+                min_df=kwargs.get('min_df', 0.001),
+                stop_words=kwargs.get('stop_words', [])
+            )
             
             self.words_freqs_ = {}
             self.top_terms={}
