@@ -74,6 +74,8 @@ class top_terms_extractor:
                     if (term["term"] + ' ' in term2["term"]) or (' ' + term["term"] in term2["term"]):
                         term["freq"] = term["freq"] - term2["freq"]
             self.top_terms = sorted(top_terms, key=lambda item: item["freq"], reverse=True)[:n]
+            # TODO: Some changes in the top_terms format may break the following code. But it is not used anywhere.
+            # should be reviewed if lemmas ara calculated.
             # if nlp!=None:
             #     top_terms = lemma_dict(top_terms, nlp)
             #     self.top_lemmas = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
