@@ -1,40 +1,15 @@
 import numpy as np
 from collections import Counter
-from nltk.util import ngrams
 import pandas as pd
-from os.path import join
-import ast
 import operator
 
 from sklearn.feature_extraction.text import CountVectorizer
-from nltk.corpus import stopwords
-
-######################################################stopwords###################################################################
-
-stop = stopwords.words('english')
-stop.extend(stopwords.words('spanish'))
-stop.extend(stopwords.words('french'))
-stop.extend(stopwords.words('portuguese'))
-stop.extend(['19','NUM','us', 'amp','https','co','get', 'dont', 'would', 'one', 'many', 'im', 'even', 'still', 'also', 'could', 'cant', 'much', 'isnt'
- 'thats', 'long', 'may', 'got', 'ive', 'yet', 'youre', 'ill', 'etc', 'lot', 'wont', 'didnt', 'two', 'theyre', 'theres', 'next'])
-stop.extend(['ingrese','ahora', 'van', 'va', 'fa','rt','decir', 'ser', 'solo', 'nunca', 'así', 'hoy', 'ir', 'dejar', 'además', 'según', 'cómo', 'menos', 'travès', 
-    'cada', 'varios', 'pues', 'mientras', 'después', 'luego', 'aquí', 'vía'])
-stop_fr = ['ça', 'plus', 'si', 'quand', 'comme', 'alors', 'jai', 'non', 'donc', 'car', 'cette', 'aussi', 'oui', 'sans', 
-     'là', 'quoi', 'après', 'parce', 'jamais', 'où', 'être', 'pourquoi', 'toujours', 'juste', 'contre', 'avant',
-     'vraiment', 'bon', 'mal', 'déjà', 'peut', 'être', 'surtout', 'très', 'sais', 'toutes', 'deux', 'autre', 'moins', 'aujourd', 'hui'
-     'sinon', 'sauf', 'sous', 'bah', 'maintenant', 'sens', 'vois', 'propos', 'reste', 'vu', 'ici', 'tout', 'tous', 'faut', 'encore', 
-     'jusqu', 'seul', 'devant', 'mec', 'trop', 'cela', 'aucune', 'chez', 'leurs', 'depuis', 'ceux', 'pareil', 'pire', 
-     'doit', 'comme']
-stop.extend(stop_fr)
-
-######################################################topterms###################################################################
 
 class top_terms_extractor:
         """A class to detect top terms and other features from text
 
         Attributes:
-        stop: A list of multilingual stopwords (en, es, fr, pr)
-        stop2: extra words that can be excluded depending on the project
+        stop_words: stop words that can be excluded depending on the project
         ngram_range, max_df, min_df: arguments for CountVectorizer
         vectorizer: An instance from CountVectorizer to count the freqs of words
 
@@ -44,14 +19,12 @@ class top_terms_extractor:
         categories: A dictionnary with categories and the top words representing the categories (get_words_freqs_by_category)
         """
         def __init__(self, **kwargs):
-            self.stop = stop 
-            self.stop2 = kwargs.get('stop_words', None)
-            if self.stop2!=None:
-                self.stop.extend(self.stop2)
-            self.vectorizer = CountVectorizer(ngram_range=kwargs.get('ngram_range',(1,2)), 
-                                              max_df=kwargs.get('max_df', 0.5),
-                                              min_df=kwargs.get('min_df', 0.001),
-                                              stop_words= self.stop)#.extend(kwargs.get('stop_words', []))
+            self.vectorizer = CountVectorizer(
+                ngram_range=kwargs.get('ngram_range',(1,2)), 
+                max_df=kwargs.get('max_df', 0.5),
+                min_df=kwargs.get('min_df', 0.001),
+                stop_words=kwargs.get('stop_words', [])
+            )
             
             self.words_freqs_ = {}
             self.top_terms={}
@@ -67,8 +40,14 @@ class top_terms_extractor:
         def get_words_freqs(self, texts):
             """Get a dictionnary with all the words in a text and their norm freq"""
             X = self.fit_vectorizer(texts)
-            total_freqs = np.array(np.sum(X, axis=0)/len(texts))[0]
-            words_freqs_ = dict(zip(self.vectorizer.get_feature_names_out(), total_freqs))
+
+            total_counts = np.array(np.sum(X, axis=0))[0]
+            total_freqs = total_counts/len(texts)
+            words_freqs_ = [{
+                "term": term,
+                "count": count,
+                "freq": freq
+            } for term, count, freq in zip(self.vectorizer.get_feature_names_out(), total_counts, total_freqs)]
             self.words_freqs_ = words_freqs_
             return words_freqs_
 
@@ -88,16 +67,19 @@ class top_terms_extractor:
                 self.get_words_freqs(texts)
             if texts==None and self.words_freqs_=={}:
                 raise Exception("No dict of words and freqs, you need to pass list of texts.")
-            top_terms = dict(sorted(self.words_freqs_.items(), key=lambda item: item[1], reverse=True)[:10*n])
-            for word in top_terms.keys():
-                for word2 in top_terms.keys():
-                    if (word + ' ' in word2) or (' ' + word in word2):
-                        top_terms[word] = top_terms[word] - top_terms[word2]
-            self.top_terms = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
-            if nlp!=None:
-                top_terms = lemma_dict(top_terms, nlp)
-                self.top_lemmas = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
-            return dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
+            top_terms = sorted(self.words_freqs_, key=lambda item: item["freq"], reverse=True)[:10*n]
+
+            for term in top_terms:
+                for term2 in top_terms:
+                    if (term["term"] + ' ' in term2["term"]) or (' ' + term["term"] in term2["term"]):
+                        term["freq"] = term["freq"] - term2["freq"]
+            self.top_terms = sorted(top_terms, key=lambda item: item["freq"], reverse=True)[:n]
+            # TODO: Some changes in the top_terms format may break the following code. But it is not used anywhere.
+            # should be reviewed if lemmas ara calculated.
+            # if nlp!=None:
+            #     top_terms = lemma_dict(top_terms, nlp)
+            #     self.top_lemmas = dict(sorted(top_terms.items(), key=lambda item: item[1], reverse=True)[:n])
+            return sorted(top_terms, key=lambda item: item["freq"], reverse=True)[:n]
 
 
 
